@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import Jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { JWT_PASSWORD } from "./config";
 
 interface AuthenticatedRequest extends Request {
@@ -7,20 +7,22 @@ interface AuthenticatedRequest extends Request {
   }
 
 export function authMiddleware(req:AuthenticatedRequest, res:Response, next:NextFunction):void {
-    const token = req.headers.authorization;
+    const authHeader = req.headers.authorization;
 
-    if (!token || !token.startsWith("Bearer ")) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
         res.status(401).json({ message: "Unauthorized: No token provided" });
         return;
       }
 
+      const token = authHeader.split(" ")[1];
+
     try {
-        const payload = Jwt.verify(token,JWT_PASSWORD) as {id:string};
+        const payload = jwt.verify(token,JWT_PASSWORD) as {id:string};
         req.id = payload.id
         next();
     } catch (e) {
         res.status(403).json({
-            message: "You are not loggedin"
+            message: "Unauthorized: Invalid or expired token"
         })
     }
 }
