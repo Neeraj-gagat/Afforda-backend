@@ -3,6 +3,7 @@ import { SigninSchema, SignupSchema } from "../types/types";
 import { prisma } from "../db/db";
 import  Jwt  from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config";
+import { authMiddleware } from "../authmiddleware";
 
 const router = Router();
 
@@ -71,5 +72,19 @@ router.post("/signin", async (req, res):Promise <any> => {
 
     res.json({
         token:token
+    })
+})
+
+router.get("/" ,authMiddleware, async (req,res):Promise <any> => {
+    // @ts-ignore
+    const id = req.id;
+    const user = await prisma.user.findFirst({
+        where:{
+            id
+        },
+        select:{
+            name:true,
+            email:true
+        }
     })
 })
