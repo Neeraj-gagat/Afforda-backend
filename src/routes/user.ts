@@ -87,4 +87,10 @@ router.get("/" ,authMiddleware, async (req,res):Promise <any> => {
             email:true
         }
     })
+
+    return res.json({
+        user
+    })
 })
+
+export const userRouter = router;
