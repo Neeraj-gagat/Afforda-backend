@@ -4,6 +4,9 @@ import { prisma } from "../db/db";
 import  Jwt  from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config";
 import { authMiddleware } from "../authmiddleware";
+import { SES } from "aws-sdk";
+
+const ses = new SES({ region: "us-east-1" });
 
 const router = Router();
 
@@ -18,6 +21,8 @@ router.post("/signup",async (req,res):Promise <any> => {
         })
     }
 
+    const { email, name, password } = parsedData.data;
+
     const userexist = await prisma.user.findFirst({
         where:{
             email:parsedData.data.email
@@ -30,17 +35,34 @@ router.post("/signup",async (req,res):Promise <any> => {
         })
     }
 
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
         data:{
-            email:parsedData.data.email,
-            name:parsedData.data.name,
-            password:parsedData.data.password
+            email:email,
+            name:name,
+            password:password
         }
     })
 
-    return res.json({
-        message:"user Created"
-    })
+     // Create verification token
+     const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
+
+     // Send verification email
+     const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+ 
+     await ses.sendEmail({
+         Source: "your_verified_email@yourdomain.com",
+         Destination: { ToAddresses: [email] },
+         Message: {
+             Subject: { Data: "Verify your email" },
+             Body: {
+                 Html: {
+                     Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
+                 }
+             }
+         }
+     }).promise();
+
+     return res.json({ message: "User created. Please check your email to verify your account." });
 })
 
 router.post("/signin", async (req, res):Promise <any> => {

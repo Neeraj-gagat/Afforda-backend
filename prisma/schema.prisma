@@ -20,5 +20,5 @@ model User {
   name        String      
   password    String
   createdAtr  DateTime    @default(now())
-  // role        Role        @default(USER)
+  emailVerified  Boolean  @default(false)
 }
