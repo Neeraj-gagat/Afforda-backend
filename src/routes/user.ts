@@ -5,8 +5,15 @@ import  Jwt  from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config";
 import { authMiddleware } from "../authmiddleware";
 import { SES } from "aws-sdk";
+import dotenv from "dotenv";
+dotenv.config();
 
-const ses = new SES({ region: "us-east-1" });
+const ses = new SES({ 
+    region: process.env.AWS_REGION,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+
+});
 
 const router = Router();
 
@@ -47,20 +54,27 @@ router.post("/signup",async (req,res):Promise <any> => {
      const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
 
      // Send verification email
-     const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
- 
-     await ses.sendEmail({
-         Source: "your_verified_email@yourdomain.com",
-         Destination: { ToAddresses: [email] },
-         Message: {
-             Subject: { Data: "Verify your email" },
-             Body: {
-                 Html: {
-                     Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
-                 }
-             }
-         }
-     }).promise();
+     const verificationLink = `http://localhost:3001/verify-email?token=${verificationToken}`;
+
+     try {
+        const result = await ses.sendEmail({
+            Source: "no-reply@affoda.com",
+            Destination: { ToAddresses: [email] },
+            Message: {
+                Subject: { Data: "Verify your email" },
+                Body: {
+                    Html: {
+                        Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
+                    }
+                }
+            }
+        }).promise();      
+        console.log("✅ Email sent:", result)  
+     } catch (err) {
+        console.error("❌ SES Email Send Error:", err);
+        return res.status(500).json({ message: "Error sending verification email." });
+     }
+
 
      return res.json({ message: "User created. Please check your email to verify your account." });
 })
@@ -82,9 +96,9 @@ router.post("/signin", async (req, res):Promise <any> => {
         }
     })
 
-    if (!userexist) {
+    if (!userexist || !userexist.emailVerified) {
         return res.status(403).json({
-            message:"Wrong Credientials"
+            message:"Invalid credentials or email not verified"
         })
     }
 
@@ -114,5 +128,24 @@ router.get("/" ,authMiddleware, async (req,res):Promise <any> => {
         user
     })
 })
+
+router.get("/verify-email", async (req, res): Promise<any> => {
+    const token = req.query.token as string;
+
+    try {
+        const decoded: any = Jwt.verify(token, JWT_PASSWORD);
+        const userId = decoded.id;
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { emailVerified: true }
+        });
+
+        return res.json({ message: "Email verified successfully." });
+    } catch (err) {
+        return res.status(400).json({ message: "Invalid or expired token." });
+    }
+});
+
 
 export const userRouter = router;
