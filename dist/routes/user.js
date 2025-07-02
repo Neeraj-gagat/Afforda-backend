@@ -58,7 +58,8 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
     // Create verification token
     const verificationToken = jsonwebtoken_1.default.sign({ id: newUser.id }, config_1.JWT_PASSWORD, { expiresIn: "1h" });
     // Send verification email
-    const verificationLink = `http://localhost:3001/verify-email?token=${verificationToken}`;
+    const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
+    console.log(`${verificationLink}`);
     try {
         const result = yield ses.sendEmail({
             Source: "no-reply@affoda.com",

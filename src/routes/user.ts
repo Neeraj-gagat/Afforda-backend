@@ -54,7 +54,9 @@ router.post("/signup",async (req,res):Promise <any> => {
      const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
 
      // Send verification email
-     const verificationLink = `http://localhost:3001/verify-email?token=${verificationToken}`;
+     const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
+
+     console.log(`${verificationLink}`)
 
      try {
         const result = await ses.sendEmail({
