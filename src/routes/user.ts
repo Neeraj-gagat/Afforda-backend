@@ -4,16 +4,17 @@ import { prisma } from "../db/db";
 import  Jwt  from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config";
 import { authMiddleware } from "../authmiddleware";
-import { SES } from "aws-sdk";
-import dotenv from "dotenv";
-dotenv.config();
+// import { SES } from "aws-sdk";
+import { emailQueue } from "../queue/emailQueue";
+// import dotenv from "dotenv";
+// dotenv.config();
 
-const ses = new SES({ 
-    region: process.env.AWS_REGION,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// const ses = new SES({ 
+//     region: process.env.AWS_REGION,
+//     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 
-});
+// });
 
 const router = Router();
 
@@ -37,9 +38,15 @@ router.post("/signup",async (req,res):Promise <any> => {
     })
 
     if (userexist) {
-        return res.status(403).json({
-            message:"User with this email already exist"
-        })
+        if (userexist.emailVerified) {
+            return res.status(403).json({ message: "User with this email already exists" });
+          } else {
+            // Re-send verification email
+            await emailQueue.add("send-verification", {
+                email: parsedData.data.email,
+                userId: userexist.id,
+              });
+          }
     }
 
     const newUser = await prisma.user.create({
@@ -59,19 +66,23 @@ router.post("/signup",async (req,res):Promise <any> => {
      console.log(`${verificationLink}`)
 
      try {
-        const result = await ses.sendEmail({
-            Source: "no-reply@affoda.com",
-            Destination: { ToAddresses: [email] },
-            Message: {
-                Subject: { Data: "Verify your email" },
-                Body: {
-                    Html: {
-                        Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
-                    }
-                }
-            }
-        }).promise();      
-        console.log("✅ Email sent:", result)  
+        // const result = await ses.sendEmail({
+        //     Source: "no-reply@affoda.com",
+        //     Destination: { ToAddresses: [email] },
+        //     Message: {
+        //         Subject: { Data: "Verify your email" },
+        //         Body: {
+        //             Html: {
+        //                 Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
+        //             }
+        //         }
+        //     }
+        // }).promise();      
+        await emailQueue.add("send-verification", {
+            email: parsedData.data.email,
+            userId: newUser.id,
+          });
+        console.log("✅ Email sent:")  
      } catch (err) {
         console.error("❌ SES Email Send Error:", err);
         return res.status(500).json({ message: "Error sending verification email." });
