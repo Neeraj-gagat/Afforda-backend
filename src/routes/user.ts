@@ -38,15 +38,20 @@ router.post("/signup",async (req,res):Promise <any> => {
     })
 
     if (userexist) {
-        if (userexist.emailVerified) {
-            return res.status(403).json({ message: "User with this email already exists" });
-          } else {
-            // Re-send verification email
-            await emailQueue.add("send-verification", {
-                email: parsedData.data.email,
-                userId: userexist.id,
-              });
-          }
+        try {
+            if (userexist.emailVerified) {
+                return res.status(403).json({ message: "User with this email already exists" });
+              } else {
+                // Re-send verification email
+                await emailQueue.add("send-verification", {
+                    email: parsedData.data.email,
+                    userId: userexist.id,
+                  });
+              }
+        } catch (error) {
+            console.log("sending verification email failed",error);
+            return res.status(500).json({ message: "Error sending verification email." });
+        }
     }
 
     const newUser = await prisma.user.create({
@@ -57,13 +62,13 @@ router.post("/signup",async (req,res):Promise <any> => {
         }
     })
 
-     // Create verification token
-     const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
+    //  // Create verification token
+    //  const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
 
-     // Send verification email
-     const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
+    //  // Send verification email
+    //  const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
 
-     console.log(`${verificationLink}`)
+    //  console.log(`${verificationLink}`)
 
      try {
         // const result = await ses.sendEmail({

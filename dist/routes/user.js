@@ -19,14 +19,15 @@ const db_1 = require("../db/db");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config");
 const authmiddleware_1 = require("../authmiddleware");
-const aws_sdk_1 = require("aws-sdk");
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
-const ses = new aws_sdk_1.SES({
-    region: process.env.AWS_REGION,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
+// import { SES } from "aws-sdk";
+const emailQueue_1 = require("../queue/emailQueue");
+// import dotenv from "dotenv";
+// dotenv.config();
+// const ses = new SES({ 
+//     region: process.env.AWS_REGION,
+//     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// });
 const router = (0, express_1.Router)();
 router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const body = req.body;
@@ -44,9 +45,22 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
     });
     if (userexist) {
-        return res.status(403).json({
-            message: "User with this email already exist"
-        });
+        try {
+            if (userexist.emailVerified) {
+                return res.status(403).json({ message: "User with this email already exists" });
+            }
+            else {
+                // Re-send verification email
+                yield emailQueue_1.emailQueue.add("send-verification", {
+                    email: parsedData.data.email,
+                    userId: userexist.id,
+                });
+            }
+        }
+        catch (error) {
+            console.log("sending verification email failed", error);
+            return res.status(500).json({ message: "Error sending verification email." });
+        }
     }
     const newUser = yield db_1.prisma.user.create({
         data: {
@@ -61,19 +75,23 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
     const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
     console.log(`${verificationLink}`);
     try {
-        const result = yield ses.sendEmail({
-            Source: "no-reply@affoda.com",
-            Destination: { ToAddresses: [email] },
-            Message: {
-                Subject: { Data: "Verify your email" },
-                Body: {
-                    Html: {
-                        Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
-                    }
-                }
-            }
-        }).promise();
-        console.log("✅ Email sent:", result);
+        // const result = await ses.sendEmail({
+        //     Source: "no-reply@affoda.com",
+        //     Destination: { ToAddresses: [email] },
+        //     Message: {
+        //         Subject: { Data: "Verify your email" },
+        //         Body: {
+        //             Html: {
+        //                 Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
+        //             }
+        //         }
+        //     }
+        // }).promise();      
+        yield emailQueue_1.emailQueue.add("send-verification", {
+            email: parsedData.data.email,
+            userId: newUser.id,
+        });
+        console.log("✅ Email sent:");
     }
     catch (err) {
         console.error("❌ SES Email Send Error:", err);
