@@ -1,20 +1,13 @@
 import { Router } from "express";
 import { SigninSchema, SignupSchema } from "../types/types";
 import { prisma } from "../db/db";
+import bcrypt from "bcrypt";
 import  Jwt  from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config";
 import { authMiddleware } from "../authmiddleware";
-// import { SES } from "aws-sdk";
-import { emailQueue } from "../queue/emailQueue";
-// import dotenv from "dotenv";
-// dotenv.config();
 
-// const ses = new SES({ 
-//     region: process.env.AWS_REGION,
-//     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-//   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+import { sendVerificationEmail } from "../email/email";
 
-// });
 
 const router = Router();
 
@@ -38,55 +31,45 @@ router.post("/signup",async (req,res):Promise <any> => {
     })
 
     if (userexist) {
-        try {
-            if (userexist.emailVerified) {
-                return res.status(403).json({ message: "User with this email already exists" });
-              } else {
-                // Re-send verification email
-                await emailQueue.add("send-verification", {
-                    email: parsedData.data.email,
-                    userId: userexist.id,
-                  });
-              }
-        } catch (error) {
-            console.log("sending verification email failed",error);
+        if (userexist.emailVerified) {
+          return res.status(403).json({ message: "User with this email already exists" });
+        } else {
+          // If not verified, re-send verification email
+          const verificationToken = Jwt.sign({ id: userexist.id }, JWT_PASSWORD, { expiresIn: "1h" });
+          const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
+    
+          try {
+            await sendVerificationEmail(email, verificationLink);
+            return res.status(200).json({
+              message: "Email already registered but not verified. Verification email resent."
+            });
+          } catch (error) {
+            console.error("Error sending verification email:", error);
             return res.status(500).json({ message: "Error sending verification email." });
+          }
         }
-    }
+      }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await prisma.user.create({
         data:{
             email:email,
             name:name,
-            password:password
+            password:hashedPassword,
         }
     })
 
-    //  // Create verification token
-    //  const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
+     // Create verification token
+     const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
 
-    //  // Send verification email
-    //  const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
+     // Send verification email
+     const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
 
-    //  console.log(`${verificationLink}`)
+     console.log(`${verificationLink}`)
 
      try {
-        // const result = await ses.sendEmail({
-        //     Source: "no-reply@affoda.com",
-        //     Destination: { ToAddresses: [email] },
-        //     Message: {
-        //         Subject: { Data: "Verify your email" },
-        //         Body: {
-        //             Html: {
-        //                 Data: `Click <a href="${verificationLink}">here</a> to verify your email. This link will expire in 1 hour.`
-        //             }
-        //         }
-        //     }
-        // }).promise();      
-        await emailQueue.add("send-verification", {
-            email: parsedData.data.email,
-            userId: newUser.id,
-          });
+        await sendVerificationEmail(email, verificationLink);
         console.log("✅ Email sent:")  
      } catch (err) {
         console.error("❌ SES Email Send Error:", err);
@@ -108,15 +91,23 @@ router.post("/signin", async (req, res):Promise <any> => {
     }
 
     const userexist = await prisma.user.findFirst({
-        where:{
-            email:parsedData.data.email,
-            password:parsedData.data.password,
-        }
-    })
+        where: { email: parsedData.data.email }
+      });
+      
+      if (!userexist) {
+        return res.status(403).json({ message: "Invalid credentials" });
+      }
+      
+      const isMatch = await bcrypt.compare(parsedData.data.password, userexist.password);
+      
+      if (!isMatch) {
+        return res.status(403).json({ message: "Invalid credentials" });
+      }
+      
 
-    if (!userexist || !userexist.emailVerified) {
+    if (!userexist.emailVerified) {
         return res.status(403).json({
-            message:"Invalid credentials or email not verified"
+            message:"email not verified"
         })
     }
 
@@ -150,16 +141,31 @@ router.get("/" ,authMiddleware, async (req,res):Promise <any> => {
 router.get("/verify-email", async (req, res): Promise<any> => {
     const token = req.query.token as string;
 
+    if (!token) {
+        return res.status(400).json({ message: "Missing token." });
+      }
+
     try {
-        const decoded: any = Jwt.verify(token, JWT_PASSWORD);
-        const userId = decoded.id;
+        const decoded = Jwt.verify(token, JWT_PASSWORD) as { id: number };
 
-        await prisma.user.update({
-            where: { id: userId },
-            data: { emailVerified: true }
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.id }
         });
-
-        return res.json({ message: "Email verified successfully." });
+    
+        if (!user) {
+          return res.status(404).json({ message: "User not found." });
+        }
+    
+        if (user.emailVerified) {
+          return res.status(200).json({ message: "Email already verified." });
+        }
+    
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerified: true }
+        });
+    
+        return res.status(200).json({ message: "Email verified successfully." });
     } catch (err) {
         return res.status(400).json({ message: "Invalid or expired token." });
     }
