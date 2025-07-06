@@ -9,6 +9,23 @@ const ses = new SES({
 
 });
 
+
+export async function sendResetPasswordEmail(email: string, resetLink: string) {
+  return ses.sendEmail({
+    Source: "no-reply@affoda.com",
+    Destination: { ToAddresses: [email] },
+    Message: {
+      Subject: { Data: "Reset Your Password" },
+      Body: {
+        Html: {
+          Data: `Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`
+        }
+      }
+    }
+  }).promise();
+}
+
+
 export async function sendVerificationEmail(email:string, verificationLink:string){
 
   const result = await ses.sendEmail({

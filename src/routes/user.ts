@@ -6,7 +6,7 @@ import  Jwt  from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config";
 import { authMiddleware } from "../authmiddleware";
 
-import { sendVerificationEmail } from "../email/email";
+import { sendResetPasswordEmail, sendVerificationEmail } from "../email/email";
 
 
 const router = Router();
@@ -170,6 +170,59 @@ router.get("/verify-email", async (req, res): Promise<any> => {
         return res.status(400).json({ message: "Invalid or expired token." });
     }
 });
+
+router.post("/request-password-reset", async (req, res): Promise<any> => {
+    const { email } = req.body;
+  
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+  
+    const user = await prisma.user.findUnique({ where: { email } });
+  
+    if (!user || !user.emailVerified) {
+      return res.status(404).json({ message: "User not found or email not verified" });
+    }
+  
+    const resetToken = Jwt.sign({ id: user.id }, JWT_PASSWORD, { expiresIn: "15m" });
+  
+    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+  
+    try {
+      await sendResetPasswordEmail(user.email, resetLink);
+      return res.status(200).json({ message: "Password reset email sent" });
+    } catch (error) {
+      console.error("Reset email error:", error);
+      return res.status(500).json({ message: "Failed to send reset email" });
+    }
+  });
+
+  
+
+  router.post("/reset-password", async (req, res):Promise <any> => {
+    const { token, newPassword } = req.body;
+  
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: "Missing token or password" });
+    }
+  
+    try {
+      const decoded = Jwt.verify(token, JWT_PASSWORD) as { id: number };
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+      await prisma.user.update({
+        where: { id: decoded.id },
+        data: { password: hashedPassword },
+      });
+  
+      return res.status(200).json({ message: "Password reset successfully" });
+    } catch (err) {
+      console.error("Reset error:", err);
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+  });
+  
+  
 
 
 export const userRouter = router;

@@ -10,3 +10,7 @@ export const SigninSchema = z.object({
     password:z.string().min(6),
     email:z.string().min(10)
 })
+
+// export const ResetPasswordRequestSchema = z.object({
+//     email:z.string().min(10)
+// })
