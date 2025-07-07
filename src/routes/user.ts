@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { SigninSchema, SignupSchema } from "../types/types";
+import { ResetPasswordRequestSchema, ResetPasswordSchema, SigninSchema, SignupSchema } from "../types/types";
 import { prisma } from "../db/db";
 import bcrypt from "bcrypt";
 import  Jwt  from "jsonwebtoken";
@@ -172,7 +172,17 @@ router.get("/verify-email", async (req, res): Promise<any> => {
 });
 
 router.post("/request-password-reset", async (req, res): Promise<any> => {
-    const { email } = req.body;
+    const data = req.body;
+    const parsedData = ResetPasswordRequestSchema.safeParse(data);
+
+    if (!parsedData.success) {
+      console.log(parsedData.error)
+      return res.status(422).json({
+        message:"incorrect inputs"
+      })
+    }
+
+    const {email} = parsedData.data;
   
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
@@ -200,7 +210,17 @@ router.post("/request-password-reset", async (req, res): Promise<any> => {
   
 
   router.post("/reset-password", async (req, res):Promise <any> => {
-    const { token, newPassword } = req.body;
+    const data = req.body;
+    const parsedData = ResetPasswordSchema.safeParse(data);
+
+    if (!parsedData.success) {
+      console.log(parsedData.error);
+      return res.status(422).json({
+        message:"Incorrect Inputs"
+      })
+    }
+
+    const { token, newPassword} = parsedData.data;
   
     if (!token || !newPassword) {
       return res.status(400).json({ message: "Missing token or password" });
