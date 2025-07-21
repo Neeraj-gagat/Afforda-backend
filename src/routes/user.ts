@@ -36,7 +36,7 @@ router.post("/signup",async (req,res):Promise <any> => {
         } else {
           // If not verified, re-send verification email
           const verificationToken = Jwt.sign({ id: userexist.id }, JWT_PASSWORD, { expiresIn: "1h" });
-          const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
+          const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
     
           try {
             await sendVerificationEmail(email, verificationLink);
@@ -64,7 +64,7 @@ router.post("/signup",async (req,res):Promise <any> => {
      const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
 
      // Send verification email
-     const verificationLink = `http://localhost:3001/api/v1/user/verify-email?token=${verificationToken}`;
+     const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
 
      console.log(`${verificationLink}`)
 
