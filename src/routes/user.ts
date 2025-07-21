@@ -1,3 +1,6 @@
+// import dotenv from "dotenv";
+// dotenv.config();
+
 import { Router } from "express";
 import { ResetPasswordRequestSchema, ResetPasswordSchema, SigninSchema, SignupSchema } from "../types/types";
 import { prisma } from "../db/db";
@@ -35,8 +38,8 @@ router.post("/signup",async (req,res):Promise <any> => {
           return res.status(403).json({ message: "User with this email already exists" });
         } else {
           // If not verified, re-send verification email
-          const verificationToken = Jwt.sign({ id: userexist.id }, JWT_PASSWORD, { expiresIn: "1h" });
-          const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+          const verificationToken = Jwt.sign({ id: userexist.id },JWT_PASSWORD, { expiresIn: "1h" });
+          const verificationLink = `https://affoda.com/verify-email?token=${verificationToken}`;
     
           try {
             await sendVerificationEmail(email, verificationLink);
@@ -65,7 +68,7 @@ router.post("/signup",async (req,res):Promise <any> => {
      const verificationToken = Jwt.sign({ id: newUser.id }, JWT_PASSWORD, { expiresIn: "1h" });
 
      // Send verification email
-     const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+     const verificationLink = `https://affoda.com/verify-email?token=${verificationToken}`;
 
      console.log(`${verificationLink}`)
 
@@ -198,7 +201,7 @@ router.post("/request-password-reset", async (req, res): Promise<any> => {
   
     const resetToken = Jwt.sign({ id: user.id }, JWT_PASSWORD, { expiresIn: "15m" });
   
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+    const resetLink = `https://affoda.com/reset-password?token=${resetToken}`;
   
     try {
       await sendResetPasswordEmail(user.email, resetLink);

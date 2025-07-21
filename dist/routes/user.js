@@ -44,7 +44,7 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
         else {
             // If not verified, re-send verification email
             const verificationToken = jsonwebtoken_1.default.sign({ id: userexist.id }, config_1.JWT_PASSWORD, { expiresIn: "1h" });
-            const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+            const verificationLink = `https://affoda.com/verify-email?token=${verificationToken}`;
             try {
                 yield (0, email_1.sendVerificationEmail)(email, verificationLink);
                 return res.status(200).json({
@@ -69,7 +69,7 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
     // Create verification token
     const verificationToken = jsonwebtoken_1.default.sign({ id: newUser.id }, config_1.JWT_PASSWORD, { expiresIn: "1h" });
     // Send verification email
-    const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+    const verificationLink = `https://affoda.com/verify-email?token=${verificationToken}`;
     console.log(`${verificationLink}`);
     try {
         yield (0, email_1.sendVerificationEmail)(email, verificationLink);
@@ -135,25 +135,20 @@ router.get("/verify-email", (req, res) => __awaiter(void 0, void 0, void 0, func
         return res.status(400).json({ message: "Missing token." });
     }
     try {
-        console.log("step1 token receved", token);
         const decoded = jsonwebtoken_1.default.verify(token, config_1.JWT_PASSWORD);
-        console.log("step1.5");
         const user = yield db_1.prisma.user.findUnique({
             where: { id: decoded.id }
         });
-        console.log("step2");
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
         if (user.emailVerified) {
             return res.status(200).json({ message: "Email already verified." });
         }
-        console.log("step3");
         yield db_1.prisma.user.update({
             where: { id: user.id },
             data: { emailVerified: true }
         });
-        console.log("step4");
         return res.status(200).json({ message: "Email verified successfully." });
     }
     catch (err) {
@@ -178,7 +173,7 @@ router.post("/request-password-reset", (req, res) => __awaiter(void 0, void 0, v
         return res.status(404).json({ message: "User not found or email not verified" });
     }
     const resetToken = jsonwebtoken_1.default.sign({ id: user.id }, config_1.JWT_PASSWORD, { expiresIn: "15m" });
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+    const resetLink = `https://affoda.com/reset-password?token=${resetToken}`;
     try {
         yield (0, email_1.sendResetPasswordEmail)(user.email, resetLink);
         return res.status(200).json({ message: "Password reset email sent" });
