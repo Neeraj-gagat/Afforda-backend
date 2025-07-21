@@ -41,7 +41,8 @@ router.post("/signup",async (req,res):Promise <any> => {
           try {
             await sendVerificationEmail(email, verificationLink);
             return res.status(200).json({
-              message: "Email already registered but not verified. Verification email resent."
+              message: "Email already registered but not verified. Verification email resent.",
+              email
             });
           } catch (error) {
             console.error("Error sending verification email:", error);
@@ -77,7 +78,9 @@ router.post("/signup",async (req,res):Promise <any> => {
      }
 
 
-     return res.json({ message: "User created. Please check your email to verify your account." });
+     return res.json({ message: "User created. Please check your email to verify your account.",
+      email
+      });
 })
 
 router.post("/signin", async (req, res):Promise <any> => {
@@ -147,7 +150,6 @@ router.get("/verify-email", async (req, res): Promise<any> => {
 
     try {
         const decoded = Jwt.verify(token, JWT_PASSWORD) as { id: number };
-
         const user = await prisma.user.findUnique({
           where: { id: decoded.id }
         });
