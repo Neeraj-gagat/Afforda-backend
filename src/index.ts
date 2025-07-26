@@ -1,6 +1,7 @@
 import express from "express"
 import cors from "cors"
 import { userRouter } from "./routes/user";
+import { searchRouter } from "./routes/search";
 
 
 const port = 3001
@@ -13,6 +14,7 @@ app.get("/", (req, res) => {
   });
 
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/search", searchRouter);
 
 app.listen(port, () => (
     console.log(`server is running on port ${port}`)
