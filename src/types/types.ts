@@ -26,3 +26,21 @@ export const ResetPasswordSchema = z.object({
     //   .regex(/[0-9]/, "Password must contain at least one digit")
     //   .regex(/[\W_]/, "Password must contain at least one special character")
   });
+
+//  agoda api schema 
+
+export const HotelSearchSchema = z.object({
+    checkInDate: z.string(),
+    checkOutDate: z.string(),
+    cityId: z.number(),
+    additional: z.object({
+      language: z.string(),
+      currency: z.string(),
+      occupancy: z.object({
+        numberOfAdult: z.number(),
+        numberOfChildren: z.number(),
+      }),
+      maxResult: z.number(),
+      sortBy: z.string(),
+    }),
+  });

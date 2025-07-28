@@ -2,14 +2,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import {Router } from "express";
-import { SigninSchema } from "../types/types";
+import { HotelSearchSchema } from "../types/types";
 import axios from "axios";
 
 const router = Router();
 
 router.post("/hotel-result",async(req, res ):Promise <any> => {
     const body  = req.body;
-    const parsedData = SigninSchema.safeParse(body);
+    const parsedData = HotelSearchSchema.safeParse(body);
 
     if (!parsedData.success) {
         return res.status(400).json({ message: "Invalid request body"})
