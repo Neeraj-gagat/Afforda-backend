@@ -26,7 +26,7 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
           maxResult,
           sortBy,
         },
-      } = body;
+      } = parsedData.data;
 
       try {
         const agodaResponse = await axios.post(
@@ -37,14 +37,21 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
               checkOutDate,
               cityId,
               additional: {
-                language,
                 currency,
+                language,
+                maxResult,
+                sortBy,
+                discountOnly: false,
+                minimumStarRating:0,
+                minimumReviewScore:0,
+                dailyRate: {
+                  minimum:0,
+                  maximum: 10000,
+                },
                 occupancy: {
                   numberOfAdult,
                   numberOfChildren,
                 },
-                maxResult,
-                sortBy,
               },
             },
           },
@@ -55,6 +62,7 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
             },
           }
         );
+        console.log("i am here")
     
         return res.json(agodaResponse.data);
       } catch (error: any) {

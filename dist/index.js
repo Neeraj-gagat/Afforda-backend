@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const user_1 = require("./routes/user");
+const search_1 = require("./routes/search");
 const port = 3001;
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -14,4 +15,5 @@ app.get("/", (req, res) => {
     res.status(200).json({ message: "Server is running ✅" });
 });
 app.use("/api/v1/user", user_1.userRouter);
+app.use("/api/v1/search", search_1.searchRouter);
 app.listen(port, () => (console.log(`server is running on port ${port}`)));

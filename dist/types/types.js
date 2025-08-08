@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ResetPasswordSchema = exports.ResetPasswordRequestSchema = exports.SigninSchema = exports.SignupSchema = void 0;
+exports.HotelSearchSchema = exports.ResetPasswordSchema = exports.ResetPasswordRequestSchema = exports.SigninSchema = exports.SignupSchema = void 0;
 const zod_1 = require("zod");
 exports.SignupSchema = zod_1.z.object({
     name: zod_1.z.string().min(3),
@@ -24,4 +24,20 @@ exports.ResetPasswordSchema = zod_1.z.object({
     //   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     //   .regex(/[0-9]/, "Password must contain at least one digit")
     //   .regex(/[\W_]/, "Password must contain at least one special character")
+});
+//  agoda api schema 
+exports.HotelSearchSchema = zod_1.z.object({
+    checkInDate: zod_1.z.string().min(1, "checkInDate is required"), // Format: YYYY-MM-DD
+    checkOutDate: zod_1.z.string().min(1, "checkOutDate is required"),
+    cityId: zod_1.z.number().int().min(1, "cityId must be a valid number"),
+    additional: zod_1.z.object({
+        currency: zod_1.z.string().min(1),
+        language: zod_1.z.string().min(1),
+        maxResult: zod_1.z.number().int().min(1),
+        sortBy: zod_1.z.string().min(1),
+        occupancy: zod_1.z.object({
+            numberOfAdult: zod_1.z.number().int().min(1),
+            numberOfChildren: zod_1.z.number().int().min(0),
+        }),
+    }),
 });

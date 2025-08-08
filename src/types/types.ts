@@ -30,17 +30,17 @@ export const ResetPasswordSchema = z.object({
 //  agoda api schema 
 
 export const HotelSearchSchema = z.object({
-    checkInDate: z.string(),
-    checkOutDate: z.string(),
-    cityId: z.number(),
-    additional: z.object({
-      language: z.string(),
-      currency: z.string(),
-      occupancy: z.object({
-        numberOfAdult: z.number(),
-        numberOfChildren: z.number(),
-      }),
-      maxResult: z.number(),
-      sortBy: z.string(),
+  checkInDate: z.string().min(1, "checkInDate is required"), // Format: YYYY-MM-DD
+  checkOutDate: z.string().min(1, "checkOutDate is required"),
+  cityId: z.number().int().min(1, "cityId must be a valid number"),
+  additional: z.object({
+    currency: z.string().min(1),
+    language: z.string().min(1),
+    maxResult: z.number().int().min(1),
+    sortBy: z.string().min(1),
+    occupancy: z.object({
+      numberOfAdult: z.number().int().min(1),
+      numberOfChildren: z.number().int().min(0),
     }),
-  });
+  }),
+});
