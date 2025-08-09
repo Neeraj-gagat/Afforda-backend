@@ -28,9 +28,12 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
         },
       } = parsedData.data;
 
+      console.log("parseddata", parsedData.data);
+
       try {
+        console.log("entered api call")
         const agodaResponse = await axios.post(
-          "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1", // real Agoda Long Search URL
+          "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1",
           {
             criteria: {
               checkInDate,
@@ -58,7 +61,7 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.AGODA_API_KEY}`,
+              Authorization: `${process.env.AGODA_API_KEY}`,
             },
           }
         );
