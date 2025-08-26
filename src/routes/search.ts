@@ -23,15 +23,16 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
           language,
           currency,
           occupancy: { numberOfAdult, numberOfChildren },
+          dailyRate: { minimum, maximum},
           maxResult,
           sortBy,
         },
       } = parsedData.data;
 
-      console.log("parseddata", parsedData.data);
+      // console.log("parseddata", parsedData.data);
 
       try {
-        console.log("entered api call")
+        // console.log("entered api call")
         const agodaResponse = await axios.post(
           "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1",
           {
@@ -48,8 +49,8 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
                 minimumStarRating:0,
                 minimumReviewScore:0,
                 dailyRate: {
-                  minimum:0,
-                  maximum: 10000,
+                  minimum:minimum,
+                  maximum:maximum,
                 },
                 occupancy: {
                   numberOfAdult,
@@ -65,7 +66,7 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
             },
           }
         );
-        console.log("i am here")
+        // console.log("i am here")
     
         return res.json(agodaResponse.data);
       } catch (error: any) {

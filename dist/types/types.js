@@ -35,6 +35,10 @@ exports.HotelSearchSchema = zod_1.z.object({
         language: zod_1.z.string().min(1),
         maxResult: zod_1.z.number().int().min(1),
         sortBy: zod_1.z.string().min(1),
+        dailyRate: zod_1.z.object({
+            minimum: zod_1.z.number().int().min(1),
+            maximum: zod_1.z.number().int()
+        }),
         occupancy: zod_1.z.object({
             numberOfAdult: zod_1.z.number().int().min(1),
             numberOfChildren: zod_1.z.number().int().min(0),
