@@ -1,7 +1,9 @@
 import express from "express"
 import cors from "cors"
+import "./jobs/exchangeRatesJob"
 import { userRouter } from "./routes/user";
 import { searchRouter } from "./routes/search";
+import { exchangeRates } from "./routes/exchangerates";
 
 
 const port = 3001
@@ -15,6 +17,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/search", searchRouter);
+app.use("/api/v1/exchange-rates", exchangeRates);
 
 app.listen(port, () => (
     console.log(`server is running on port ${port}`)
