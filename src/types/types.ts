@@ -39,7 +39,7 @@ export const HotelSearchSchema = z.object({
     maxResult: z.number().int().min(1),
     sortBy: z.string().min(1),
     dailyRate: z.object({
-      minimum: z.number().int().min(1),
+      minimum: z.number().int(),
       maximum: z.number().int()
     }),
     occupancy: z.object({
