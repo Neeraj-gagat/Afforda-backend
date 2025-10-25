@@ -22,6 +22,9 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
         additional: {
           language,
           currency,
+          discount,
+          minimumStarRating,
+          minimumReviewScore,
           occupancy: { numberOfAdult, numberOfChildren },
           dailyRate: { minimum, maximum},
           maxResult,
@@ -45,9 +48,9 @@ router.post("/hotel-result",async(req, res ):Promise <any> => {
                 language,
                 maxResult,
                 sortBy,
-                discountOnly: false,
-                minimumStarRating:0,
-                minimumReviewScore:0,
+                discountOnly: discount,
+                minimumStarRating:minimumStarRating,
+                minimumReviewScore:minimumReviewScore,
                 dailyRate: {
                   minimum:minimum,
                   maximum:maximum,

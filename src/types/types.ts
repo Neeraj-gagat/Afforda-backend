@@ -38,6 +38,9 @@ export const HotelSearchSchema = z.object({
     language: z.string().min(1),
     maxResult: z.number().int().min(1),
     sortBy: z.string().min(1),
+    discount: z.boolean().optional(),
+    minimumStarRating: z.number().int().min(0).optional(),
+    minimumReviewScore: z.number().int().min(0).optional(),
     dailyRate: z.object({
       minimum: z.number().int(),
       maximum: z.number().int()
